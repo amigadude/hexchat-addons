@@ -29,6 +29,11 @@
 ##   + XChat compatibility. Currently when trying to port this script back to XChat, strange
 ##     behaviour was encountered where a caught event would be treated normally anyway, even
 ##     though our callback returned EAT_XCHAT or EAT_ALL. I don't know how to solve that.
+##
+##      --------------------------[amigadude changes]------------------------------
+##      changed file modes to binary (wb & rb) near the pickle calls
+##      changed has_key to in (python3 - "if permacolortable.has_key(nick):2 becomes
+##                              "if nick in permacolortable:")
 
 from __future__ import print_function
 
@@ -111,7 +116,7 @@ def get_color(ctable, nick):
     color = None
     
     # permanent colour
-    if permacolortable.has_key(nick):
+    if nick in permacolortable:
         pcolor = permacolortable[nick]
     else:
         pcolor = None
@@ -190,7 +195,7 @@ def setcolor_command(word, word_eol, userdata):
 
     if nick[0] == "-": # remove the nick!
         nick = nick[1:] # get rid of that - at the beginning
-        if permacolortable.has_key(nick):
+        if nick in permacolortable:
             permacolortable.pop(nick)
             omsg("Removed "+nick+" from color table", "BALEETED")
         else:
@@ -199,7 +204,7 @@ def setcolor_command(word, word_eol, userdata):
         return hexchat.EAT_ALL
 
     if paramcount == 1: # just the nick was supplied
-        if permacolortable.has_key(nick):
+        if nick in permacolortable:
             color = permacolortable.get(nick)
             omsg(col(color) + nick + ecs("o") + " is color " + str(color), "INFO")
         else:
@@ -217,7 +222,7 @@ def setcolor_command(word, word_eol, userdata):
             dmsg("Saving permacolortable...")
 
             try:
-                f = open(datafile, "w")
+                f = open(datafile, "wb")
                 pickle.dump(permacolortable, f)
                 f.close()
             except BaseException as e:
@@ -298,7 +303,7 @@ def message_callback(word, word_eol, userdata, attributes):
 
         chan = hexchat.get_info("channel")
         net = hexchat.get_info("network")
-        if not chancolortable.has_key((net, chan)):
+        if net not in chancolortable or chan not in chancolortable[net]:
             # make new color table
             dmsg("Making new color table for "+chan, "COLORTABLE")
             chancolortable[net, chan] = defaultcolortable[:]
@@ -318,7 +323,7 @@ def message_callback(word, word_eol, userdata, attributes):
 ########## HOOK IT UP ###########
 
 try:
-    permacolortable = pickle.load(open(datafile))
+    permacolortable = pickle.load(open(datafile,"rb"))
 except:
     pass
 
